@@ -1,5 +1,5 @@
 export const WEBHOOK_URL =
-  "https://locations-contained-authorities-retailer.trycloudflare.com/webhook-test/a4630b92-b33f-45ab-bf23-6b6d7f9a275a";
+  "https://ssl-clinics-hide-delight.trycloudflare.com/webhook-test/a4630b92-b33f-45ab-bf23-6b6d7f9a275a";
 
 export const REQUEST_TIMEOUT_MS = 180000;
 
