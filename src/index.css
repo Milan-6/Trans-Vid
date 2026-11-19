@@ -1,0 +1,51 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root { color-scheme: dark; }
+html, body, #root { min-height: 100%; }
+body {
+  margin: 0;
+  background: #080e11;
+  color: #EDF7F6;
+  font-family: "Plus Jakarta Sans", system-ui, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+}
+::selection { background: rgba(81, 226, 245, 0.3); }
+
+:focus-visible { outline: 2px solid #51E2F5; outline-offset: 3px; border-radius: 6px; }
+
+@layer components {
+  .surface {
+    background: rgba(8, 14, 17, 0.66);
+    border: 1px solid rgba(237, 247, 246, 0.12);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    box-shadow: 0 24px 60px -30px rgba(0, 0, 0, 0.8);
+  }
+  .tilt-card { position: relative; transform-style: preserve-3d; will-change: transform; }
+  .tilt-card::after {
+    content: ""; position: absolute; inset: 0; border-radius: inherit; pointer-events: none;
+    background: radial-gradient(420px circle at var(--gx, 50%) var(--gy, 50%), rgba(237, 247, 246, 0.09), transparent 60%);
+    opacity: var(--glare, 0); transition: opacity 0.4s ease;
+  }
+  .font-display-tight { font-variation-settings: "opsz" 144; letter-spacing: -0.025em; }
+}
+
+/* Custom cursor (only mounted for fine pointers without reduced motion) */
+html.custom-cursor, html.custom-cursor * { cursor: none; }
+html.custom-cursor input, html.custom-cursor textarea { cursor: text; }
+
+@keyframes sweep { 0% { transform: translateX(-100%); } 100% { transform: translateX(350%); } }
+@keyframes softpulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@keyframes spin { to { transform: rotate(360deg); } }
+.animate-sweep { animation: sweep 1.8s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.animate-softpulse { animation: softpulse 1.6s ease-in-out infinite; }
+.animate-spin-slow { animation: spin 0.9s linear infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .animate-sweep { animation: none; width: 100% !important; opacity: 0.5; }
+  .animate-softpulse, .animate-spin-slow { animation: none; }
+  html { scroll-behavior: auto; }
+}
