@@ -1,5 +1,5 @@
 export const WEBHOOK_URL =
-  "http://localhost:5678/webhook-test/f332cbe6-a036-48b3-94cd-bbc0b408595a";
+  "https://jacket-stud-classical-organize.trycloudflare.com/webhook-test/a4630b92-b33f-45ab-bf23-6b6d7f9a275a";
 
 export const REQUEST_TIMEOUT_MS = 180000;
 
