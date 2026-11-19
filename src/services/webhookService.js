@@ -1,4 +1,4 @@
-import { WEBHOOK_URL, REQUEST_TIMEOUT_MS } from "../config/constants.js";
+import { WEBHOOK_URL, REQUEST_TIMEOUT_MS, DEFAULT_PROMPT } from "../config/constants.js";
 
 /** kind: "timeout" | "network" | "http" | "aborted" */
 export class WebhookError extends Error {
@@ -11,13 +11,13 @@ export class WebhookError extends Error {
 }
 
 /**
- * POSTs { url } to the n8n webhook. Never retries (a retry could trigger a
+ * POSTs { url, prompt } to the n8n webhook. Never retries (a retry could trigger a
  * second backend execution). Resolves with the raw response text; parsing is
  * the responsibility of responseParser.js.
  */
 export async function submitMediaUrl(
   mediaUrl,
-  { signal, timeoutMs = REQUEST_TIMEOUT_MS, endpoint = WEBHOOK_URL } = {}
+  { signal, timeoutMs = REQUEST_TIMEOUT_MS, endpoint = WEBHOOK_URL, prompt } = {}
 ) {
   const controller = new AbortController();
   let timedOut = false;
@@ -49,11 +49,15 @@ export async function submitMediaUrl(
 
   try {
     let response;
+    const trimmedPrompt = typeof prompt === "string" ? prompt.trim() : "";
+    const effectivePrompt = trimmedPrompt.length > 0 ? prompt.trim() : DEFAULT_PROMPT;
+    const payload = { url: mediaUrl, prompt: effectivePrompt };
+
     try {
       response = await fetch(endpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: mediaUrl }),
+        body: JSON.stringify(payload),
         signal: controller.signal,
       });
     } catch (err) {

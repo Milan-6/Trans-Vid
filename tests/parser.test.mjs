@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { parseWebhookResponse, ResponseError } from "../src/services/responseParser.js";
 import { submitMediaUrl, WebhookError } from "../src/services/webhookService.js";
+import { DEFAULT_PROMPT } from "../src/config/constants.js";
 import http from "node:http";
 
 const DOC = "https://docs.google.com/document/d/1AbC_dEf-123/edit";
@@ -86,7 +87,16 @@ const kind = async (p) => { try { await p; return "none"; } catch (e) { assert.o
 
 const ok = await submitMediaUrl("https://x.test/v", { endpoint: base + "/ok" });
 const echoed = JSON.parse(ok.text);
-assert.deepEqual([echoed.echoed, echoed.method, echoed.ct], [{ url: "https://x.test/v" }, "POST", "application/json"]); n++; console.log("ok - POST contract");
+assert.deepEqual([echoed.echoed, echoed.method, echoed.ct], [{ url: "https://x.test/v", prompt: DEFAULT_PROMPT }, "POST", "application/json"]); n++; console.log("ok - POST contract (default prompt)");
+
+const okCustom = await submitMediaUrl("https://x.test/v", { endpoint: base + "/ok", prompt: "  Custom AI task instruction  " });
+const echoedCustom = JSON.parse(okCustom.text);
+assert.equal(echoedCustom.echoed.prompt, "Custom AI task instruction"); n++; console.log("ok - POST contract (custom prompt trimmed)");
+
+const okWhitespace = await submitMediaUrl("https://x.test/v", { endpoint: base + "/ok", prompt: "   " });
+const echoedWhitespace = JSON.parse(okWhitespace.text);
+assert.equal(echoedWhitespace.echoed.prompt, DEFAULT_PROMPT); n++; console.log("ok - POST contract (whitespace falls back to default)");
+
 assert.equal(await kind(submitMediaUrl("u", { endpoint: base + "/500" })), "http"); n++; console.log("ok - HTTP error");
 assert.equal(await kind(submitMediaUrl("u", { endpoint: base + "/slow", timeoutMs: 150 })), "timeout"); n++; console.log("ok - timeout");
 const ac = new AbortController(); setTimeout(() => ac.abort(), 50);

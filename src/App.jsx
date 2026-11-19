@@ -39,6 +39,7 @@ export default function App() {
 
   const [appState, setAppState] = useState(APP_STATES.IDLE);
   const [url, setUrl] = useState("");
+  const [prompt, setPrompt] = useState("");
   const [message, setMessage] = useState("");
   const [output, setOutput] = useState(null);
 
@@ -80,7 +81,7 @@ export default function App() {
     setAppState(APP_STATES.PROCESSING);
 
     try {
-      const raw = await submitMediaUrl(check.url, { signal: controller.signal });
+      const raw = await submitMediaUrl(check.url, { signal: controller.signal, prompt });
       if (id !== requestId.current) return;
       const result = parseWebhookResponse(raw);
       setOutput(result);
@@ -92,7 +93,7 @@ export default function App() {
     } finally {
       if (id === requestId.current) busyRef.current = false;
     }
-  }, [url]);
+  }, [url, prompt]);
 
   return (
     <div className="relative min-h-screen overflow-x-hidden">
@@ -105,6 +106,8 @@ export default function App() {
           <UrlConsole
             value={url}
             onChange={handleUrlChange}
+            prompt={prompt}
+            onChangePrompt={setPrompt}
             onSubmit={run}
             appState={appState}
             message={message}

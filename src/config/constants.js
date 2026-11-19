@@ -24,12 +24,36 @@ export const APP_STATES = {
 export const PROCESSING_MESSAGE =
   "Executing n8n pipeline — downloading, transcribing & syncing Doc...";
 
+export const DEFAULT_PROMPT =
+  "Transcribe and summarize the provided media. Produce a clear, well-structured summary containing the main ideas, important points and key takeaways. Save the completed summary to a Google Doc and return the document link.";
+
+export const PROMPT_PRESETS = [
+  {
+    id: "summary-doc",
+    label: "Summary + Google Doc",
+    prompt:
+      "Summarize the transcript, identify key takeaways and save the result to Google Docs.",
+  },
+  {
+    id: "topic-outline",
+    label: "Topic Outline",
+    prompt:
+      "Extract the main topics, subtopics and important concepts. Generate a structured outline and save it to Google Docs.",
+  },
+  {
+    id: "study-planner",
+    label: "Study Planner + Calendar",
+    prompt:
+      "Analyze the educational content, extract its learning objectives and create a structured study schedule in Google Calendar.",
+  },
+];
+
 export const PIPELINE_STAGES = [
   { id: "fetch", title: "Downloading Media", detail: "Media Fetch" },
   { id: "transcribe", title: "Transcribing Audio", detail: "Whisper Large v3" },
   {
     id: "summarize",
     title: "Summarizing & Syncing Google Doc",
-    detail: "Gemini 3.5 Flash Lite",
+    detail: "Gemini 3.1 Flash Lite",
   },
 ];

@@ -21,7 +21,7 @@ export default function HeroHeader({ reducedMotion }) {
         <span className="font-mono text-xs font-bold tracking-widest text-cyan uppercase">Trans-Vid</span>
         <span className="hidden text-ice/30 sm:inline">/</span>
         <p className="rounded-full border border-ice/15 bg-ink/50 px-3.5 py-1.5 font-mono text-[11px] tracking-wide text-ice/75 backdrop-blur-sm sm:text-xs">
-          n8n · whisper-large-v3 · gemini-3.5-flash-lite
+          n8n · whisper-large-v3 · gemini-3.1-flash-lite
         </p>
       </header>
       <h1 className="font-display-tight mt-8 max-w-4xl font-display text-[clamp(2.6rem,8.2vw,6.4rem)] font-light leading-[0.98] text-ice [text-wrap:balance]">
