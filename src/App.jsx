@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import WebGLCanvas from "./components/WebGLCanvas.jsx";
 import CustomCursor from "./components/CustomCursor.jsx";
 import HeroHeader from "./components/HeroHeader.jsx";
-import UrlConsole, { validateMediaUrl } from "./components/UrlConsole.jsx";
+import UrlConsole from "./components/UrlConsole.jsx";
 import PipelineTracker from "./components/PipelineTracker.jsx";
 import OutputWindow from "./components/OutputWindow.jsx";
 import { submitMediaUrl, WebhookError } from "./services/webhookService.js";
@@ -40,58 +40,98 @@ export default function App() {
   const [appState, setAppState] = useState(APP_STATES.IDLE);
   const [url, setUrl] = useState("");
   const [prompt, setPrompt] = useState("");
+  const [promptError, setPromptError] = useState("");
+  const [urlError, setUrlError] = useState("");
   const [message, setMessage] = useState("");
   const [output, setOutput] = useState(null);
+  const [hasMedia, setHasMedia] = useState(false);
 
   const busyRef = useRef(false);
-  const requestId = useRef(0);
+  const activeRequestId = useRef(0);
   const controllerRef = useRef(null);
 
   useEffect(() => () => {
-    requestId.current += 1; // invalidate any in-flight response
+    activeRequestId.current += 1; // invalidate any in-flight response
     controllerRef.current?.abort();
+  }, []);
+
+  const handlePromptChange = useCallback((value) => {
+    setPrompt(value);
+    setPromptError("");
   }, []);
 
   const handleUrlChange = useCallback((value) => {
     setUrl(value);
-    setMessage((m) => (m ? "" : m));
+    setUrlError("");
   }, []);
 
   const run = useCallback(async () => {
     if (busyRef.current) return;
     busyRef.current = true;
-    const id = ++requestId.current;
+    const id = ++activeRequestId.current;
 
+    // Reset previous errors and outputs
+    setPromptError("");
+    setUrlError("");
     setOutput(null);
     setMessage("");
-    setAppState(APP_STATES.VALIDATING);
-    await nextFrame();
-    if (id !== requestId.current) return;
 
-    const check = validateMediaUrl(url, prompt);
-    if (!check.ok) {
-      setMessage(check.message);
+    // Validate inputs
+    const trimmedPrompt = (prompt || "").trim();
+    const trimmedUrl = (url || "").trim();
+
+    let pErr = "";
+    let uErr = "";
+
+    if (!trimmedPrompt) {
+      pErr = "Please enter a task prompt describing what you want me to do.";
+    }
+
+    if (trimmedUrl) {
+      try {
+        const parsed = new URL(trimmedUrl);
+        if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+          uErr = `Only http: and https: links are supported (this one uses ${parsed.protocol}).`;
+        }
+      } catch {
+        uErr = "That isn't a valid URL. Include the full address, for example https://example.com/video.";
+      }
+    }
+
+    if (pErr || uErr) {
+      setPromptError(pErr);
+      setUrlError(uErr);
       setAppState(APP_STATES.ERROR);
       busyRef.current = false;
       return;
     }
+
+    const currentHasMedia = Boolean(trimmedUrl);
+    setHasMedia(currentHasMedia);
+
+    setAppState(APP_STATES.VALIDATING);
+    await nextFrame();
+    if (id !== activeRequestId.current) return;
 
     const controller = new AbortController();
     controllerRef.current = controller;
     setAppState(APP_STATES.PROCESSING);
 
     try {
-      const raw = await submitMediaUrl(check.url, { signal: controller.signal, prompt });
-      if (id !== requestId.current) return;
+      const raw = await submitMediaUrl(trimmedUrl, {
+        signal: controller.signal,
+        prompt: trimmedPrompt,
+      });
+      if (id !== activeRequestId.current) return;
       const result = parseWebhookResponse(raw);
       setOutput(result);
       setAppState(APP_STATES.COMPLETED);
     } catch (err) {
-      if (id !== requestId.current) return;
+      if (id !== activeRequestId.current) return;
       setMessage(describeError(err));
       setAppState(APP_STATES.ERROR);
     } finally {
-      if (id === requestId.current) busyRef.current = false;
+      if (id === activeRequestId.current) busyRef.current = false;
     }
   }, [url, prompt]);
 
@@ -107,14 +147,20 @@ export default function App() {
             value={url}
             onChange={handleUrlChange}
             prompt={prompt}
-            onChangePrompt={setPrompt}
+            onChangePrompt={handlePromptChange}
+            promptError={promptError}
+            urlError={urlError}
             onSubmit={run}
             appState={appState}
             message={message}
             pointerFx={pointerFx}
             reducedMotion={reducedMotion}
           />
-          <PipelineTracker appState={appState} reducedMotion={reducedMotion} />
+          <PipelineTracker
+            appState={appState}
+            hasMedia={hasMedia}
+            reducedMotion={reducedMotion}
+          />
         </div>
         {output && appState === APP_STATES.COMPLETED && (
           <OutputWindow output={output} pointerFx={pointerFx} reducedMotion={reducedMotion} />

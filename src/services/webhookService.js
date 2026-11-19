@@ -50,8 +50,12 @@ export async function submitMediaUrl(
   try {
     let response;
     const trimmedPrompt = typeof prompt === "string" ? prompt.trim() : "";
-    const effectivePrompt = trimmedPrompt.length > 0 ? prompt.trim() : DEFAULT_PROMPT;
-    const payload = { url: mediaUrl, prompt: effectivePrompt };
+    const effectivePrompt = trimmedPrompt || DEFAULT_PROMPT;
+    const trimmedUrl = typeof mediaUrl === "string" ? mediaUrl.trim() : "";
+    const payload = {
+      prompt: effectivePrompt,
+      url: trimmedUrl,
+    };
 
     try {
       response = await fetch(endpoint, {

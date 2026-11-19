@@ -49,3 +49,76 @@ html.custom-cursor input, html.custom-cursor textarea { cursor: text; }
   .animate-softpulse, .animate-spin-slow { animation: none; }
   html { scroll-behavior: auto; }
 }
+
+/* Tactile 3D Buttons */
+.btn-3d {
+  position: relative;
+  user-select: none;
+  touch-action: manipulation;
+}
+.btn-3d-cyan {
+  background-color: #51E2F5;
+  color: #080e11;
+  font-weight: 600;
+  box-shadow: 0 4px 0 0 #2fb8cb;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+  will-change: transform;
+}
+.btn-3d-cyan:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 0 #2fb8cb;
+  background-color: #9DF9EF;
+}
+.btn-3d-cyan:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 #2fb8cb;
+}
+
+.btn-3d-mint {
+  background-color: #9DF9EF;
+  color: #080e11;
+  font-weight: 600;
+  box-shadow: 0 4px 0 0 #5ec7bb;
+  transition: transform 0.12s ease, box-shadow 0.12s ease, background-color 0.15s ease;
+  will-change: transform;
+}
+.btn-3d-mint:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 5px 0 0 #5ec7bb;
+  background-color: #51E2F5;
+}
+.btn-3d-mint:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 #5ec7bb;
+}
+
+.btn-3d-outline {
+  border: 1px solid rgba(237, 247, 246, 0.2);
+  background-color: rgba(8, 14, 17, 0.7);
+  color: #EDF7F6;
+  font-weight: 600;
+  box-shadow: 0 3px 0 0 rgba(237, 247, 246, 0.15);
+  transition: transform 0.12s ease, box-shadow 0.12s ease, border-color 0.15s ease, color 0.15s ease;
+  will-change: transform;
+}
+.btn-3d-outline:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 0 0 rgba(81, 226, 245, 0.4);
+  border-color: rgba(81, 226, 245, 0.7);
+  color: #51E2F5;
+}
+.btn-3d-outline:active:not(:disabled) {
+  transform: translateY(2px);
+  box-shadow: 0 1px 0 0 rgba(81, 226, 245, 0.4);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-3d-cyan:hover:not(:disabled),
+  .btn-3d-cyan:active:not(:disabled),
+  .btn-3d-mint:hover:not(:disabled),
+  .btn-3d-mint:active:not(:disabled),
+  .btn-3d-outline:hover:not(:disabled),
+  .btn-3d-outline:active:not(:disabled) {
+    transform: none !important;
+  }
+}

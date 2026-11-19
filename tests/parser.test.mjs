@@ -61,6 +61,22 @@ t("nested data wrapper + transcript segments", () => {
   const r = parseWebhookResponse(json({ data: { summary: { overview: "O" } }, transcript: [{ text: "a" }, { text: "b" }] }));
   assert.equal(r.overview, "O"); assert.equal(r.transcript, "a\nb");
 });
+t("structured image response", () => {
+  const r = parseWebhookResponse(json({ summary: "City image generated", image: { url: "https://example.com/city.png", prompt: "futuristic city" } }));
+  assert.equal(r.image?.url, "https://example.com/city.png");
+  assert.equal(r.image?.prompt, "futuristic city");
+});
+t("calendar event confirmation in text", () => {
+  const r = parseWebhookResponse(txt("Event created: AI Study Session\nDate: Tomorrow at 10 AM\nhttps://calendar.google.com/event?id=123"));
+  assert.equal(r.calendar?.confirmed, true);
+  assert.equal(r.calendar?.title, "AI Study Session");
+});
+t("gmail confirmation in text", () => {
+  const r = parseWebhookResponse(txt("Email successfully delivered\nSent to: user@example.com\nSubject: Your Study Plan"));
+  assert.equal(r.email?.confirmed, true);
+  assert.equal(r.email?.recipient, "user@example.com");
+  assert.equal(r.email?.subject, "Your Study Plan");
+});
 t("failures", () => {
   fails(txt("   "), "empty");
   fails({ text: "{bad", contentType: "application/json" }, "invalid-json");

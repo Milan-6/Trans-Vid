@@ -58,6 +58,131 @@ function findDocUrlInText(text) {
   return null;
 }
 
+// ---------- Tool Confirmations & Media Extractors ----------
+
+const IMAGE_KEYS = ["image", "imageUrl", "image_url", "imageData", "image_data", "base64", "output_image"];
+
+function extractImage(chain, text) {
+  for (const obj of chain) {
+    if (!isObj(obj)) continue;
+    for (const key of IMAGE_KEYS) {
+      const val = obj[key];
+      if (!val) continue;
+      if (typeof val === "string" && val.trim()) {
+        const trimmed = val.trim();
+        const mimeType = obj.mimeType || obj.mime_type || obj.contentType || "image/png";
+        const prompt = obj.imagePrompt || obj.image_prompt || obj.revised_prompt || obj.description || "";
+        if (trimmed.startsWith("http://") || trimmed.startsWith("https://") || trimmed.startsWith("data:image/")) {
+          return { url: trimmed, mimeType, prompt };
+        }
+        if (/^[A-Za-z0-9+/=\s]{20,}$/.test(trimmed)) {
+          return { url: `data:${mimeType};base64,${trimmed.replace(/\s+/g, "")}`, mimeType, prompt, base64: trimmed };
+        }
+      }
+      if (isObj(val)) {
+        const nestedUrl = val.url || val.imageUrl || val.data || val.base64;
+        if (typeof nestedUrl === "string" && nestedUrl.trim()) {
+          const trimmed = nestedUrl.trim();
+          const mimeType = val.mimeType || val.mime_type || obj.mimeType || "image/png";
+          const prompt = val.prompt || val.description || obj.imagePrompt || "";
+          if (trimmed.startsWith("http") || trimmed.startsWith("data:image/")) {
+            return { url: trimmed, mimeType, prompt };
+          }
+          if (/^[A-Za-z0-9+/=\s]{20,}$/.test(trimmed)) {
+            return { url: `data:${mimeType};base64,${trimmed.replace(/\s+/g, "")}`, mimeType, prompt, base64: trimmed };
+          }
+        }
+      }
+    }
+  }
+
+  if (typeof text === "string") {
+    const mdImgMatch = text.match(/!\[(.*?)\]\((https?:\/\/[^\s)]+|data:image\/[^\s)]+)\)/);
+    if (mdImgMatch) {
+      return { url: mdImgMatch[2], mimeType: "image/png", prompt: mdImgMatch[1] || "" };
+    }
+  }
+  return null;
+}
+
+function extractCalendar(chain, text) {
+  for (const obj of chain) {
+    if (!isObj(obj)) continue;
+    const c = obj.calendar || obj.event || obj.googleCalendar || obj.google_calendar;
+    if (isObj(c)) {
+      return {
+        confirmed: true,
+        title: str(c.title || c.summary || c.name || "Scheduled Event"),
+        dateTime: str(c.dateTime || c.date || c.time || c.start || ""),
+        link: str(c.link || c.htmlLink || c.url || ""),
+      };
+    }
+  }
+
+  if (typeof text === "string") {
+    const isConfirmed =
+      /(?:event\s*(?:has\s*been\s*)?(?:created|successfully\s*scheduled)|successfully\s*scheduled\s*(?:the\s*event)?|scheduled\s*(?:on|in)\s*google\s*calendar)/i.test(text);
+    if (isConfirmed) {
+      let title = "";
+      let dateTime = "";
+      let link = "";
+      const titleMatch = text.match(/(?:title|event(?:\s*created)?|summary):\s*["']?([^\n"']+)["']?/i);
+      if (titleMatch) title = titleMatch[1].trim();
+      const timeMatch = text.match(/(?:date|time|when|scheduled\s*for):\s*([^\n]+)/i);
+      if (timeMatch) dateTime = timeMatch[1].trim();
+      const linkMatch = text.match(/https:\/\/calendar\.google\.com\/[^\s"')\]]+/i);
+      if (linkMatch) link = linkMatch[0].trim();
+
+      return {
+        confirmed: true,
+        title: title || "Scheduled Calendar Event",
+        dateTime,
+        link,
+      };
+    }
+  }
+  return null;
+}
+
+function extractEmail(chain, text) {
+  for (const obj of chain) {
+    if (!isObj(obj)) continue;
+    const e = obj.email || obj.gmail || obj.messageSent;
+    if (isObj(e)) {
+      return {
+        confirmed: true,
+        recipient: str(e.recipient || e.to || e.email || ""),
+        subject: str(e.subject || ""),
+        attachment: str(e.attachment || e.attachments || ""),
+      };
+    }
+  }
+
+  if (typeof text === "string") {
+    const isConfirmed =
+      /(?:email\s*(?:has\s*been\s*)?(?:sent|successfully\s*delivered|dispatched)|sent\s*(?:an?\s*)?email\s*to)/i.test(text);
+    if (isConfirmed) {
+      let recipient = "";
+      let subject = "";
+      let attachment = "";
+      const toMatch = text.match(/(?:sent\s*to|to|recipient):\s*([a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}|[^\n,]+)/i);
+      if (toMatch) recipient = toMatch[1].trim();
+      const subMatch = text.match(/subject:\s*["']?([^\n"']+)["']?/i);
+      if (subMatch) subject = subMatch[1].trim();
+      const attMatch = text.match(/(?:attachment[s]?|attached):\s*([^\n]+)/i);
+      if (attMatch) attachment = attMatch[1].trim();
+
+      return {
+        confirmed: true,
+        recipient,
+        subject,
+        attachment,
+      };
+    }
+  }
+  return null;
+}
+
 // ---------- Summary pieces ----------
 
 const emptyParts = () => ({ title: "", overview: "", keyPoints: [], conclusion: "", body: "" });
@@ -283,7 +408,22 @@ function build(node, chain, depth) {
     extras.docUrl ||
     findDocUrlInText([parts.overview, parts.conclusion, parts.body, ...parts.keyPoints].join("\n"));
 
-  return { ...parts, transcript, docUrl: docUrl || null };
+  const allText = [parts.title, parts.overview, parts.conclusion, parts.body, ...parts.keyPoints].filter(Boolean).join("\n\n");
+  const rawText = parts.body || allText;
+
+  const image = extractImage(chain, allText);
+  const calendar = extractCalendar(chain, allText);
+  const email = extractEmail(chain, allText);
+
+  return {
+    ...parts,
+    transcript,
+    docUrl: docUrl || null,
+    image: image || null,
+    calendar: calendar || null,
+    email: email || null,
+    rawText,
+  };
 }
 
 function normalize(node, ancestors, depth) {
@@ -353,5 +493,9 @@ export function parseWebhookResponse({ text, contentType = "" } = {}) {
 
   const result = normalize(data, [], 0);
   if (!result.docUrl) result.docUrl = findDocUrlInText(body);
+  if (!result.image) result.image = extractImage([], body);
+  if (!result.calendar) result.calendar = extractCalendar([], body);
+  if (!result.email) result.email = extractEmail([], body);
+  if (!result.rawText) result.rawText = body;
   return result;
 }

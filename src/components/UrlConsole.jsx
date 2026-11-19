@@ -10,7 +10,7 @@ export function validateMediaUrl(raw, prompt) {
     if (!promptValue) {
       return {
         ok: false,
-        message: "Please enter a task prompt describing what you want the AI agent to do.",
+        message: "Please enter a task prompt describing what you want me to do.",
       };
     }
   }
@@ -44,6 +44,8 @@ export default function UrlConsole({
   onSubmit,
   appState,
   message,
+  promptError = "",
+  urlError = "",
   pointerFx,
   reducedMotion,
 }) {
@@ -70,6 +72,13 @@ export default function UrlConsole({
     if (!busy) onSubmit();
   };
 
+  const handleKeyDown = (e) => {
+    if ((e.ctrlKey || e.metaKey) && e.key === "Enter") {
+      e.preventDefault();
+      if (!busy) onSubmit();
+    }
+  };
+
   const handlePresetClick = (presetText) => {
     if (busy || !onChangePrompt) return;
     if ((prompt || "").trim() === presetText.trim()) {
@@ -79,6 +88,9 @@ export default function UrlConsole({
     }
     promptInput.current?.focus();
   };
+
+  const hasPromptError = Boolean(promptError || (message && !prompt.trim() && appState === APP_STATES.ERROR));
+  const hasUrlError = Boolean(urlError || (message && value.trim() && appState === APP_STATES.ERROR));
 
   return (
     <form
@@ -126,8 +138,12 @@ export default function UrlConsole({
           </div>
         </div>
 
+        <p className="mt-1.5 text-xs text-ice/65 leading-relaxed">
+          Ask me to summarize videos, create images, schedule events, prepare documents or send emails.
+        </p>
+
         {/* Primary Multiline Textarea */}
-        <div className="relative mt-3">
+        <div className="relative mt-2.5">
           <textarea
             ref={promptInput}
             id="task-prompt"
@@ -135,18 +151,29 @@ export default function UrlConsole({
             disabled={busy}
             value={prompt}
             onChange={(e) => onChangePrompt?.(e.target.value)}
-            placeholder={`Describe what you want the AI agent to accomplish...\n\nFor example: Analyze this educational content, extract the important concepts, create structured study notes, and organize them into a learning plan.`}
+            onKeyDown={handleKeyDown}
+            placeholder="What would you like me to do?"
             aria-required="true"
-            aria-invalid={Boolean(message && !prompt.trim() && appState === APP_STATES.ERROR)}
-            aria-describedby="console-msg"
-            className="w-full resize-y min-h-[7rem] max-h-64 rounded-xl border border-ice/15 bg-ink/70 p-4 font-sans text-sm sm:text-base text-ice placeholder:text-ice/35 hover:border-ice/30 focus:border-cyan/70 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-cyan/40 disabled:opacity-60 transition-colors leading-relaxed"
+            aria-invalid={hasPromptError}
+            aria-describedby={hasPromptError ? "task-prompt-error" : undefined}
+            className={`w-full resize-y min-h-[7rem] max-h-64 rounded-xl border bg-ink/70 p-4 font-sans text-sm sm:text-base text-ice placeholder:text-ice/35 transition-colors leading-relaxed focus:outline-none focus-visible:outline-none ${
+              hasPromptError
+                ? "border-coral focus:border-coral focus:ring-2 focus:ring-coral/40"
+                : "border-ice/15 hover:border-ice/30 focus:border-cyan/70 focus:ring-2 focus:ring-cyan/40"
+            } disabled:opacity-60`}
           />
         </div>
 
+        {promptError && (
+          <p id="task-prompt-error" role="alert" className="mt-1.5 font-mono text-xs text-coral">
+            {promptError}
+          </p>
+        )}
+
         {/* 2. PROMPT PRESET CHIPS */}
-        <div className="mt-3 flex flex-wrap items-center gap-2">
+        <div className="mt-3.5 flex flex-wrap items-center gap-2">
           <span className="font-mono text-[10px] uppercase tracking-wider text-ice/40 mr-1">
-            Presets:
+            Example Prompts:
           </span>
           {PROMPT_PRESETS.map((preset) => {
             const isSelected = (prompt || "").trim() === preset.prompt.trim();
@@ -187,7 +214,7 @@ export default function UrlConsole({
               htmlFor="source-media"
               className="font-mono text-[11px] font-semibold tracking-[0.18em] text-ice/70"
             >
-              SOURCE MEDIA
+              SOURCE MEDIA (OPTIONAL)
             </label>
             <span className="rounded bg-ice/8 px-1.5 py-0.5 font-mono text-[10px] tracking-wider text-ice/40 uppercase">
               OPTIONAL
@@ -209,10 +236,15 @@ export default function UrlConsole({
             value={value}
             disabled={busy}
             onChange={(e) => onChange(e.target.value)}
-            placeholder="Paste a YouTube, video or audio URL (optional)"
-            aria-invalid={Boolean(message && value.trim() && appState === APP_STATES.ERROR)}
-            aria-describedby="console-msg"
-            className="h-12 w-full rounded-xl border border-ice/15 bg-ink/50 pl-4 pr-12 font-mono text-sm text-ice placeholder:text-ice/35 hover:border-ice/30 focus:border-cyan/70 focus:outline-none focus-visible:outline-none focus:ring-2 focus:ring-cyan/40 disabled:opacity-60 transition-colors"
+            onKeyDown={handleKeyDown}
+            placeholder="Paste a video or audio link here, if needed."
+            aria-invalid={hasUrlError}
+            aria-describedby={hasUrlError ? "source-media-error" : undefined}
+            className={`h-12 w-full rounded-xl border bg-ink/50 pl-4 pr-12 font-mono text-sm text-ice placeholder:text-ice/35 transition-colors focus:outline-none focus-visible:outline-none ${
+              hasUrlError
+                ? "border-coral focus:border-coral focus:ring-2 focus:ring-coral/40"
+                : "border-ice/15 hover:border-ice/30 focus:border-cyan/70 focus:ring-2 focus:ring-cyan/40"
+            } disabled:opacity-60`}
           />
           {value && !busy && (
             <button
@@ -228,6 +260,12 @@ export default function UrlConsole({
             </button>
           )}
         </div>
+
+        {urlError && (
+          <p id="source-media-error" role="alert" className="mt-1.5 font-mono text-xs text-coral">
+            {urlError}
+          </p>
+        )}
       </div>
 
       {/* 4. PRIMARY RUN PIPELINE BUTTON */}
@@ -236,7 +274,7 @@ export default function UrlConsole({
           ref={button}
           type="submit"
           disabled={busy}
-          className="inline-flex h-13 w-full items-center justify-center gap-2.5 rounded-xl bg-cyan px-6 text-sm sm:text-base font-semibold text-ink transition-colors hover:bg-mint disabled:cursor-not-allowed disabled:bg-ice/15 disabled:text-ice/60 shadow-lg shadow-cyan/10"
+          className="btn-3d btn-3d-cyan inline-flex h-13 w-full items-center justify-center gap-2.5 rounded-xl px-6 text-sm sm:text-base font-semibold text-ink disabled:cursor-not-allowed disabled:bg-ice/15 disabled:text-ice/60 disabled:shadow-none disabled:transform-none"
         >
           {submitting ? (
             <>
@@ -253,13 +291,15 @@ export default function UrlConsole({
       </div>
 
       {/* ERROR / STATUS FEEDBACK */}
-      <div
-        id="console-msg"
-        role={message ? "alert" : undefined}
-        className="min-h-[1.5rem] pt-3 text-sm leading-relaxed text-coral"
-      >
-        {message}
-      </div>
+      {message && (
+        <div
+          id="console-msg"
+          role="alert"
+          className="min-h-[1.5rem] pt-3 text-sm leading-relaxed text-coral"
+        >
+          {message}
+        </div>
+      )}
     </form>
   );
 }

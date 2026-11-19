@@ -29,31 +29,49 @@ export const DEFAULT_PROMPT =
 
 export const PROMPT_PRESETS = [
   {
-    id: "summary-docs",
-    label: "Summary + Docs",
+    id: "calendar-email",
+    label: "Study Schedule + Email",
     prompt:
-      "Summarize content and create a structured Google Doc.",
+      "Create a 3-day AI security study schedule on Google Calendar and email me the plan.",
   },
   {
-    id: "topic-extraction",
-    label: "Topic Extraction",
+    id: "summary-doc-image",
+    label: "Summarize + Docs + Cyberpunk Image",
     prompt:
-      "Extract key topics, subtopics and important concepts.",
+      "Summarize this video, save the summary to Google Docs and generate a cyberpunk cover image.",
   },
   {
-    id: "study-planner",
-    label: "Study Planner",
+    id: "image-email",
+    label: "Futuristic City Image + Email",
     prompt:
-      "Generate a learning plan and organize study sessions in Google Calendar.",
+      "Create an image of a futuristic city and email it to me.",
   },
 ];
 
-export const PIPELINE_STAGES = [
-  { id: "fetch", title: "Downloading Media", detail: "Media Fetch" },
-  { id: "transcribe", title: "Transcribing Audio", detail: "Whisper Large v3" },
+export const PIPELINE_STAGES_MEDIA = [
+  { id: "fetch", title: "Getting your video", detail: "Media Fetch" },
+  { id: "transcribe", title: "Transcribing the audio", detail: "Whisper Large v3" },
   {
-    id: "summarize",
-    title: "Summarizing & Syncing Google Doc",
-    detail: "Gemini 3.1 Flash Lite",
+    id: "process",
+    title: "Understanding your request and completing tasks",
+    detail: "Gemini AI & Tools",
   },
+  { id: "prepare", title: "Preparing your results", detail: "Workspace Sync" },
 ];
+
+export const PIPELINE_STAGES_NO_MEDIA = [
+  {
+    id: "understand",
+    title: "Understanding your request",
+    detail: "Gemini AI",
+  },
+  {
+    id: "execute",
+    title: "Completing your requested tasks",
+    detail: "Multi-tool Execution",
+  },
+  { id: "prepare", title: "Preparing your results", detail: "Workspace Sync" },
+];
+
+// Fallback for legacy imports
+export const PIPELINE_STAGES = PIPELINE_STAGES_MEDIA;

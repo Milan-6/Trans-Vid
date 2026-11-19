@@ -1,16 +1,19 @@
 import { useLayoutEffect, useRef } from "react";
 import gsap from "gsap";
-import { AudioLines, Check, Download, FileText, TriangleAlert } from "lucide-react";
-import { APP_STATES, PIPELINE_STAGES, PROCESSING_MESSAGE } from "../config/constants.js";
+import { AudioLines, Check, Cpu, Download, FileText, Sparkles, TriangleAlert } from "lucide-react";
+import {
+  APP_STATES,
+  PIPELINE_STAGES_MEDIA,
+  PIPELINE_STAGES_NO_MEDIA,
+} from "../config/constants.js";
 
-const ICONS = { fetch: Download, transcribe: AudioLines, summarize: FileText };
-
-const STATUS_TEXT = {
-  [APP_STATES.IDLE]: "Ready. Paste a media URL to run the pipeline.",
-  [APP_STATES.VALIDATING]: "Checking the URL…",
-  [APP_STATES.PROCESSING]: PROCESSING_MESSAGE,
-  [APP_STATES.COMPLETED]: "Pipeline complete. Response validated.",
-  [APP_STATES.ERROR]: "Pipeline did not complete.",
+const ICONS = {
+  fetch: Download,
+  transcribe: AudioLines,
+  process: Sparkles,
+  understand: Sparkles,
+  execute: Cpu,
+  prepare: FileText,
 };
 
 const STAGE_STYLE = {
@@ -27,10 +30,22 @@ const MARK_STYLE = {
   [APP_STATES.ERROR]: "bg-mauve/20 text-mauve",
 };
 
-export default function PipelineTracker({ appState, reducedMotion }) {
+export default function PipelineTracker({ appState, hasMedia = false, reducedMotion }) {
   const list = useRef(null);
   const processing = appState === APP_STATES.PROCESSING;
   const completed = appState === APP_STATES.COMPLETED;
+
+  const stages = hasMedia ? PIPELINE_STAGES_MEDIA : PIPELINE_STAGES_NO_MEDIA;
+
+  const statusText = {
+    [APP_STATES.IDLE]: "Ready. Tell me what you'd like to accomplish.",
+    [APP_STATES.VALIDATING]: "Checking your inputs…",
+    [APP_STATES.PROCESSING]: hasMedia
+      ? "Executing pipeline — downloading media, transcribing & running tools…"
+      : "Executing agent — understanding instructions and running tools…",
+    [APP_STATES.COMPLETED]: "Tasks complete. Response validated.",
+    [APP_STATES.ERROR]: "Pipeline did not complete.",
+  };
 
   useLayoutEffect(() => {
     if (!completed || reducedMotion) return undefined;
@@ -38,19 +53,34 @@ export default function PipelineTracker({ appState, reducedMotion }) {
       gsap.fromTo("[data-mark]", { scale: 0.6 }, { scale: 1, duration: 0.5, ease: "back.out(2.2)", stagger: 0.08 });
     }, list);
     return () => ctx.revert();
-  }, [completed, reducedMotion]);
+  }, [completed, reducedMotion, hasMedia]);
 
   return (
     <section aria-label="Pipeline status" className="mt-6">
-      <ol ref={list} className="relative grid gap-3 md:grid-cols-3">
-        {PIPELINE_STAGES.map((stage) => {
-          const Icon = appState === APP_STATES.COMPLETED ? Check : appState === APP_STATES.ERROR ? TriangleAlert : ICONS[stage.id];
+      <ol
+        ref={list}
+        className={`relative grid gap-3 ${
+          hasMedia ? "grid-cols-1 sm:grid-cols-2 lg:grid-cols-4" : "grid-cols-1 md:grid-cols-3"
+        }`}
+      >
+        {stages.map((stage) => {
+          const Icon =
+            appState === APP_STATES.COMPLETED
+              ? Check
+              : appState === APP_STATES.ERROR
+              ? TriangleAlert
+              : ICONS[stage.id] || FileText;
           return (
             <li
               key={stage.id}
               className={`surface flex items-center gap-3 rounded-xl border px-4 py-3.5 transition-colors duration-500 ${STAGE_STYLE[appState]}`}
             >
-              <span data-mark className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ice/8 text-ice/60 transition-colors duration-500 ${MARK_STYLE[appState] || ""}`}>
+              <span
+                data-mark
+                className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-ice/8 text-ice/60 transition-colors duration-500 ${
+                  MARK_STYLE[appState] || ""
+                }`}
+              >
                 <Icon size={18} aria-hidden="true" />
               </span>
               <span className="min-w-0">
@@ -67,8 +97,14 @@ export default function PipelineTracker({ appState, reducedMotion }) {
         {completed && <div className="h-full w-full rounded-full bg-mint" />}
       </div>
 
-      <p role="status" aria-live="polite" className={`mt-3 font-mono text-xs leading-relaxed ${processing ? "text-coral" : completed ? "text-mint" : "text-ice/55"}`}>
-        {STATUS_TEXT[appState]}
+      <p
+        role="status"
+        aria-live="polite"
+        className={`mt-3 font-mono text-xs leading-relaxed ${
+          processing ? "text-coral" : completed ? "text-mint" : "text-ice/55"
+        }`}
+      >
+        {statusText[appState]}
       </p>
     </section>
   );
