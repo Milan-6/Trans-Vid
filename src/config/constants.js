@@ -29,22 +29,22 @@ export const DEFAULT_PROMPT =
 
 export const PROMPT_PRESETS = [
   {
-    id: "summary-doc",
-    label: "Summary + Google Doc",
+    id: "summary-docs",
+    label: "Summary + Docs",
     prompt:
-      "Summarize the transcript, identify key takeaways and save the result to Google Docs.",
+      "Summarize content and create a structured Google Doc.",
   },
   {
-    id: "topic-outline",
-    label: "Topic Outline",
+    id: "topic-extraction",
+    label: "Topic Extraction",
     prompt:
-      "Extract the main topics, subtopics and important concepts. Generate a structured outline and save it to Google Docs.",
+      "Extract key topics, subtopics and important concepts.",
   },
   {
     id: "study-planner",
-    label: "Study Planner + Calendar",
+    label: "Study Planner",
     prompt:
-      "Analyze the educational content, extract its learning objectives and create a structured study schedule in Google Calendar.",
+      "Generate a learning plan and organize study sessions in Google Calendar.",
   },
 ];
 

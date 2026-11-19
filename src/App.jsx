@@ -68,7 +68,7 @@ export default function App() {
     await nextFrame();
     if (id !== requestId.current) return;
 
-    const check = validateMediaUrl(url);
+    const check = validateMediaUrl(url, prompt);
     if (!check.ok) {
       setMessage(check.message);
       setAppState(APP_STATES.ERROR);
